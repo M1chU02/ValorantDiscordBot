@@ -1,3 +1,4 @@
+import puppeteer from "puppeteer";
 import {
   Client,
   GatewayIntentBits,
@@ -15,6 +16,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName("ping")
     .setDescription("Replies with Pong!"),
+  new SlashCommandBuilder()
+    .setName("stats")
+    .setDescription("Shows players overview"),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
@@ -38,6 +42,24 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   if (interaction.commandName === "ping") {
     await interaction.reply("Pong!");
+  }
+
+  if (interaction.commandName === "stats") {
+    await interaction.deferReply();
+    try {
+      const browser = await puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+      const page = await browser.newPage();
+      await page.goto("https://tracker.gg/valorant");
+      await browser.close();
+      const title = await page.title();
+      await interaction.editReply(`Page title is: ${title}`);
+    } catch (error) {
+      console.error(error);
+      await interaction.editReply("Error updating stats!");
+    }
   }
 });
 
